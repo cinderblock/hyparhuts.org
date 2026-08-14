@@ -20,6 +20,37 @@
   --color-deep: #221f1a;
   --color-deep-text: #f2ede3;
 
+  /* Small accent text — labels, numbers — needs more contrast than links do
+     at 11–14px, so it gets its own value rather than reusing --color-primary. */
+  --color-accent-strong: #8f3f16;
+
+  /* The hero and footer are dark in BOTH modes, so anything drawn on them
+     must not flip with the colour scheme. In light mode --color-primary is a
+     dark orange, which lands at 3.3:1 on the deep background. */
+  --color-accent-on-deep: #e2803f;
+
+  --color-button-bg: #b4531f;
+  --color-button-bg-hover: #8f3f16;
+  --color-button-text: #ffffff;
+
+  /* Subtle page wash. Kept under a few percent of lightness variation — it
+     should read as paper, not as a designed gradient. */
+  --gradient-page:
+    radial-gradient(80rem 50rem at 50% -12%, #fffdf7 0%, transparent 58%),
+    radial-gradient(70rem 55rem at 105% 108%, #efe7d8 0%, transparent 62%);
+  /* Intermediate stops on purpose: a two-stop gradient this wide and this
+     low-amplitude lands on very few distinct 8-bit values and can ring on a
+     dark field. Extra stops spread the steps out. An feTurbulence dither
+     fixes it more thoroughly but measurably slowed rasterisation, which is
+     not a trade worth making for a wash this subtle. */
+  --gradient-deep: radial-gradient(
+    55rem 40rem at 50% 50%,
+    rgb(226 128 63 / 0.11) 0%,
+    rgb(226 128 63 / 0.06) 38%,
+    rgb(226 128 63 / 0.02) 58%,
+    transparent 72%
+  );
+
   --font-sans:
     "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, sans-serif;
@@ -41,6 +72,26 @@
     --color-primary-hover: #f09b5f;
     --color-deep: #0e0d0a;
     --color-deep-text: #f2ede3;
+
+    --color-accent-strong: #f09b5f;
+    /* Already bright; the deep surfaces are darker here, so it only improves. */
+    --color-accent-on-deep: #e2803f;
+
+    /* White on the bright orange is only 2.8:1. Dark ink on it is 5.8:1. */
+    --color-button-bg: #e2803f;
+    --color-button-bg-hover: #f09b5f;
+    --color-button-text: #221f1a;
+
+    --gradient-page:
+      radial-gradient(80rem 50rem at 50% -12%, #221f17 0%, transparent 58%),
+      radial-gradient(70rem 55rem at 105% 108%, #1c1810 0%, transparent 62%);
+    --gradient-deep: radial-gradient(
+      55rem 40rem at 50% 50%,
+      rgb(226 128 63 / 0.09) 0%,
+      rgb(226 128 63 / 0.05) 38%,
+      rgb(226 128 63 / 0.02) 58%,
+      transparent 72%
+    );
   }
 }
 
@@ -64,6 +115,19 @@ html {
 body {
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+/* The page wash, as a fixed layer rather than a background on <html>.
+   A gradient on a 10,000px-tall document would stretch to nothing; a
+   `background-attachment: fixed` one repaints on every scroll frame and is
+   unreliable on iOS. A fixed pseudo-element behind the content is neither. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--gradient-page);
+  pointer-events: none;
 }
 
 h1,
@@ -104,16 +168,16 @@ code {
   margin-top: 1.5rem;
   padding: 0.7rem 1.4rem;
   border-radius: 999px;
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--color-button-bg);
+  color: var(--color-button-text);
   font-weight: 600;
   text-decoration: none;
   transition: background 0.15s ease;
 }
 
 .button:hover {
-  background: var(--color-primary-hover);
-  color: #fff;
+  background: var(--color-button-bg-hover);
+  color: var(--color-button-text);
 }
 
 /* --- hero ---------------------------------------------------------------- */
@@ -124,7 +188,7 @@ code {
   min-height: 100vh;
   min-height: 100svh;
   padding: var(--gutter);
-  background: var(--color-deep);
+  background: var(--gradient-deep), var(--color-deep);
   color: var(--color-deep-text);
   text-align: center;
 }
@@ -135,7 +199,7 @@ code {
 
 .hero-eyebrow {
   margin-bottom: 1rem;
-  color: var(--color-primary);
+  color: var(--color-accent-on-deep);
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.18em;
@@ -231,7 +295,7 @@ code {
 }
 
 .idea-index-n {
-  color: var(--color-primary);
+  color: var(--color-accent-strong);
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
@@ -281,7 +345,7 @@ code {
 }
 
 .chapter-number {
-  color: var(--color-primary);
+  color: var(--color-accent-strong);
   font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 600;
@@ -315,7 +379,7 @@ code {
 
 .chapter-standalone-label {
   display: block;
-  color: var(--color-primary);
+  color: var(--color-accent-strong);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -453,7 +517,7 @@ code {
 }
 
 .version dt {
-  color: var(--color-primary);
+  color: var(--color-accent-strong);
   font-family: var(--font-mono);
   font-weight: 700;
 }
@@ -466,7 +530,7 @@ code {
 
 .site-footer {
   padding: var(--section-gap) var(--gutter);
-  background: var(--color-deep);
+  background: var(--gradient-deep), var(--color-deep);
   color: color-mix(in srgb, var(--color-deep-text) 70%, transparent);
 }
 
@@ -490,4 +554,8 @@ code {
   gap: 1.5rem;
   list-style: none;
   font-weight: 500;
+}
+
+.footer-links a {
+  color: var(--color-accent-on-deep);
 }
