@@ -86,10 +86,14 @@ asserts the built output contains no `[data-feedback-ui]`.
 
 ## Media
 
-Media is not wired up yet. `MediaSlot` renders a labelled placeholder naming
-the asset each position wants, so it stays obvious what is still missing. See
-`plans/hyparhuts-site.md` for where the source footage lives and what needs
-transcoding.
+The 2014 build timelapse is in, as a click-to-play section. Everything else is
+still a placeholder: `MediaSlot` renders a labelled box naming the asset each
+position wants, so it stays obvious what is missing.
+
+Web-ready files in `public/media/` are **committed**. Their sources are 12–29 GB
+ProRes files on local drives that CI can't see, so ignoring them would ship a
+site with missing video. Never commit the sources. See `plans/media.md` for the
+inventory and the ffmpeg recipes.
 
 ## Deployment
 

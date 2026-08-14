@@ -5,8 +5,14 @@ how to get them web-ready. Companion to `plans/hyparhuts-site.md`.
 
 ## Sources
 
-Everything lives off-repo. `public/media/` is gitignored — web-ready files are
-generated from these, never committed.
+Sources live off-repo on local drives. **Derived web files in `public/media/`
+are committed.**
+
+That reverses an earlier call to gitignore them, and the reason is simple: the
+sources are 12–29 GB ProRes files on `S:` and `P:` that CI can never see, so an
+ignored `public/media/` means every deploy ships a site with missing video.
+Commit the derived files; never the sources. If the directory grows past about
+100 MB, move it to R2 rather than reaching for Git LFS.
 
 ### 2014 build timelapse — the main asset
 
@@ -93,30 +99,32 @@ ffmpeg -i public/media/build-d09-720.mp4 -ss 0 -frames:v 1 -y public/media/build
 ## Plan
 
 1. ~~Characterise the footage~~ ✅
-2. **← current** One proof-of-concept overview clip from `d09`, dropped into
-   the page so the length, speed and framing can be judged in context.
-3. Decide placement (see open question below).
-4. Cut the remaining slots that the timelapse _can_ serve.
-5. Find the hinge live photos; shoot new close-ups for `edge-trim` and
+2. ~~One proof-of-concept overview clip from `d09`~~ ✅ — 46 s, 720p, 5.1 MB
+   H.264 + 2.9 MB VP9 + a poster frame.
+3. ~~Place it~~ ✅ — a "Watch one get built" section between the premise and
+   the index of ideas, click-to-play. **Provisional**; see open question 1.
+4. **← current** Judge length, speed and framing in context, then adjust.
+5. Cut the remaining slots that the timelapse _can_ serve.
+6. Find the hinge live photos; shoot new close-ups for `edge-trim` and
    `hinge-assembly` if they can't be found.
-6. Render geometry diagrams from the SolidWorks sketches.
-7. Build a `bun run media` script so the whole set regenerates from sources.
+7. Render geometry diagrams from the SolidWorks sketches.
+8. Build a `bun run media` script so the whole set regenerates from sources.
 
 ## Open questions
 
-1. **Where does the timelapse go?** It is an overview, not a technique
-   illustration, so it does not fit the per-chapter slots. Options: a muted
-   autoplay loop behind the hero; a dedicated "watch one get built" section
-   between the premise and the seven ideas; or both, with a short loop up top
-   and the longer cut lower down. **Recommendation:** dedicated section — a
-   hero video would fight the wordmark and cost mobile users a few MB before
-   they have read anything.
-2. How long should the overview run? The proof of concept is ~46 s.
-3. Is there newer build footage that supersedes 2014?
+1. **Is the placement right?** Built as a dedicated section rather than a hero
+   loop, because a hero video fights the wordmark and costs mobile users
+   several MB before they have read anything. Easy to move if that's wrong.
+2. **Is 46 s right, and is the speed right?** `framestep=31`. Lower it for a
+   longer, smoother clip; raise it for shorter and choppier.
+3. Should the other four clips become their own cuts, or should all five be
+   edited into one continuous three-day piece?
+4. Is there newer build footage that supersedes 2014?
 
 ## Things not to do
 
-- Don't commit anything from `public/media/` — it is generated, and large.
 - Don't copy source `.mov` files into the repo. They are 12–29 GB each.
+- Don't re-add `public/media/` to `.gitignore` — see the reasoning above.
+- Don't autoplay the timelapse. It is several MB and nothing but motion.
 - Don't autoplay with sound, and don't autoplay at all without
   `prefers-reduced-motion` being respected.

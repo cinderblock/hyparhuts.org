@@ -1,6 +1,7 @@
 import type { MetaFunction } from "react-router";
 import { ChapterSection } from "../components/ChapterSection";
 import { MediaSlot } from "../components/MediaSlot";
+import { VideoFigure } from "../components/VideoFigure";
 import { chapters } from "../content/chapters";
 
 const TITLE = "HyparHuts — temporary structures that set up in five minutes";
@@ -73,6 +74,21 @@ export default function Home() {
               that stays assembled between deployments. But none of them depend
               on the others, so any one is worth taking on its own.
             </p>
+          </div>
+        </section>
+
+        <section className="watch" id="watch" data-fb="watch">
+          <div className="watch-inner">
+            <h2>Watch one get built</h2>
+            <p>
+              Three days in the shop, September 2014 — bare floor to walls
+              standing. Foam arrives, gets cut and wrapped, and goes up.
+            </p>
+            <VideoFigure
+              name="build-d09"
+              caption="Day one: delivery, layout, wrapping, and the first panels standing."
+              meta="0:46 · silent"
+            />
           </div>
         </section>
 

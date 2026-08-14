@@ -55,6 +55,39 @@ test.describe("Home", () => {
     }
   });
 
+  test("offers the build timelapse without preloading it", async ({ page }) => {
+    const video = page.locator(".video-player");
+    await expect(video).toBeVisible();
+    // Several MB — it must not download until someone asks for it.
+    await expect(video).toHaveAttribute("preload", "none");
+    await expect(video).toHaveAttribute(
+      "poster",
+      "/media/build-d09-poster.jpg",
+    );
+    await expect(video).not.toHaveAttribute("autoplay", /.*/);
+  });
+
+  test("ships every media file the page references", async ({
+    page,
+    request,
+  }) => {
+    const urls = await page
+      .locator("video source")
+      .evaluateAll((els) =>
+        els.map((el) => (el as HTMLSourceElement).getAttribute("src") ?? ""),
+      );
+    const posters = await page
+      .locator("video")
+      .evaluateAll((els) =>
+        els.map((el) => (el as HTMLVideoElement).getAttribute("poster") ?? ""),
+      );
+    expect(urls.length).toBeGreaterThan(0);
+    for (const path of [...urls, ...posters]) {
+      const res = await request.get(path);
+      expect(res.status(), `${path} should be served`).toBe(200);
+    }
+  });
+
   test("links out to the design files", async ({ page }) => {
     await expect(
       page.getByRole("link", { name: "Design files on GitHub" }),
