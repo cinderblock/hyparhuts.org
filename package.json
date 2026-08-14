@@ -1,11 +1,11 @@
 {
-  "name": "ssg-base",
+  "name": "hyparhuts.org",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "react-router dev",
-    "build": "react-router build",
-    "preview": "vite preview --outDir build/client",
+    "build": "react-router build && bun run scripts/emit-404.ts",
+    "preview": "vite preview --outDir build/client --port 4173 --strictPort",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "fmt": "oxfmt --write .",

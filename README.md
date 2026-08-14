@@ -1,74 +1,103 @@
-# SSG Base
+# hyparhuts.org
 
-A boilerplate for static sites built with React Router 7, Vite, and TypeScript.
+The website for [HyparHuts](https://hyparhuts.org) — temporary panel shelters
+descended from the hexayurt, with the tape taken out.
+
+Design files and the original writeup live in
+[cinderblock/HyparHut](https://github.com/cinderblock/HyparHut).
 
 ## Stack
 
-- **React 19** + **React Router 7** — UI and routing
-- **Vite** — build tool and dev server
-- **TypeScript** — strict mode
-- **Bun** — package manager and runtime
-- **Playwright** — end-to-end testing
-- **oxfmt** + **lefthook** — code formatting and pre-commit hooks
-- **Cloudflare Pages** — deployment (via GitHub Actions)
+Built from [cinderblock/ssg-base](https://github.com/cinderblock/ssg-base):
+React 19 + React Router 8, Vite, TypeScript, Bun, Playwright, oxfmt + lefthook.
+Fully prerendered — there is no server at runtime.
 
-## Getting Started
+## Getting started
 
 ```sh
 bun install
 bun run dev
 ```
 
-## Scripts
+| Script              | Description                                            |
+| ------------------- | ------------------------------------------------------ |
+| `bun run dev`       | Dev server on :5173, with the feedback layer           |
+| `bun run build`     | Prerender to `build/client`                            |
+| `bun run preview`   | Serve the built site on :4173                          |
+| `bun run test`      | Playwright, against a fresh build (not the dev server) |
+| `bun run typecheck` | `react-router typegen && tsc`                          |
+| `bun run fmt`       | Format with oxfmt                                      |
 
-| Script              | Description                  |
-| ------------------- | ---------------------------- |
-| `bun run dev`       | Start dev server             |
-| `bun run build`     | Build static site            |
-| `bun run preview`   | Preview built site           |
-| `bun run test`      | Run Playwright tests         |
-| `bun run test:ui`   | Run tests with Playwright UI |
-| `bun run fmt`       | Format all files with oxfmt  |
-| `bun run fmt:check` | Check formatting             |
-| `bun run typecheck` | Type check                   |
-
-## Project Structure
+## Structure
 
 ```
 app/
-  root.tsx          — HTML shell and layout
-  routes.ts         — Route definitions
-  routes/
-    home.tsx        — Index page
-    404.tsx         — Not found page
-  styles/
-    global.css      — Global styles (light/dark mode)
-public/
-  favicon-light.svg — Favicon for light mode
-  favicon-dark.svg  — Favicon for dark mode
-tests/
-  home.spec.ts      — E2E tests
+  root.tsx                  HTML shell; mounts the dev feedback layer
+  routes.ts                 Route table
+  routes/home.tsx           The single scroll narrative
+  routes/404.tsx            Not found
+  content/chapters.ts       The seven ideas — prose lives here, not in JSX
+  components/               ChapterSection, MediaSlot
+  dev/feedback/             Dev-only feedback overlay (never shipped)
+  styles/global.css         Everything visual
+dev/feedback-plugin.ts      Dev-only server side of the feedback layer
+worker/index.ts             Cloudflare Worker: host canonicalisation + assets
+scripts/emit-404.ts         Copies the prerendered 404 to `404.html`
+plans/                      Working notes; start with hyparhuts-site.md
 ```
+
+Site copy is data in `app/content/chapters.ts` rather than markup, so the
+prose can be edited without touching layout.
+
+## The dev feedback layer
+
+`bun run dev` mounts an overlay that only exists in development. It exists so
+review comments can be left on the page itself and picked up directly:
+
+- **Click the Feedback button** (or `Ctrl`/`Cmd`+`I`), then click any element.
+- **Or select text** — a "Comment on selection" bubble appears.
+- Type, then `Ctrl`/`Cmd`+`Enter`. `Esc` cancels.
+
+Comments append to `feedback/feedback.jsonl` (gitignored), one JSON object per
+line. Each records the route, a CSS selector, the anchored element's text, and
+the viewport size.
+
+To mark one handled, append a resolve record:
+
+```jsonc
+{ "type": "resolve", "id": "fb_…", "ts": "…", "note": "shortened the hook" }
+```
+
+The page is tailing that file, so the pin clears in the browser immediately —
+no reload.
+
+Two deliberate properties, because the point is to edit the site while someone
+is still typing into it:
+
+- **Append-only, both directions.** Neither side ever rewrites the file, so
+  concurrent writes can't clobber each other.
+- **Drafts live in `sessionStorage`.** An in-progress comment survives Fast
+  Refresh and a full page reload, so an edit landing mid-sentence doesn't eat
+  it. Pins re-anchor by selector, falling back to matching the element's text.
+
+None of it reaches production: the overlay is behind `import.meta.env.DEV`
+inside a dynamic import, which folds to `null` at build time. A Playwright test
+asserts the built output contains no `[data-feedback-ui]`.
+
+## Media
+
+Media is not wired up yet. `MediaSlot` renders a labelled placeholder naming
+the asset each position wants, so it stays obvious what is still missing. See
+`plans/hyparhuts-site.md` for where the source footage lives and what needs
+transcoding.
 
 ## Deployment
 
-The included GitHub Actions workflow deploys to Cloudflare Pages on push to `master` and runs CI on pull requests.
+Not deployed yet. The target is **Cloudflare Workers static assets** —
+`wrangler.jsonc` and `worker/index.ts` describe the shape, including
+canonicalising `hyparhuts.com` and any `www.` host to bare `hyparhuts.org`. The
+deploy itself gets wired up in [`cinderblock/ops`](https://github.com/cinderblock/ops)
+once the site content settles.
 
-Set up these secrets/variables in your repo:
-
-- **Secret**: `CLOUDFLARE_API_TOKEN`
-- **Variable**: `CLOUDFLARE_ACCOUNT_ID`
-
-Update the `--project-name` in `.github/workflows/deploy.yml` to match your Cloudflare Pages project.
-
-## Adding Routes
-
-1. Create a new file in `app/routes/`
-2. Add it to `app/routes.ts`
-
-All routes are automatically pre-rendered during build (configured via `prerender: true` in `react-router.config.ts`).
-
-## Development Tips
-
-- Append `?light` to any URL during development to force light mode (e.g., `http://localhost:5173/?light`).
-- Favicons automatically adapt to the user's light/dark mode preference. Replace the SVGs in `public/` with your own.
+CI (`.github/workflows/ci.yml`) runs format, typecheck, build, and tests on
+push and PR. It does not deploy.

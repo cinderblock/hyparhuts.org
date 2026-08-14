@@ -1,0 +1,21 @@
+{
+  // Cloudflare Workers static-assets deploy.
+  //
+  // Present so the deploy shape is in the repo, but NOT wired up yet — the
+  // actual deploy (routes, account, custom domains for hyparhuts.org and
+  // hyparhuts.com) is set up in the `ops` repo once the site is settled.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hyparhuts",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./build/client",
+    "binding": "ASSETS",
+    // Every route is prerendered to its own index.html, so a miss is a real
+    // miss and should get the 404 page rather than an SPA shell.
+    "not_found_handling": "404-page",
+  },
+  "observability": {
+    "enabled": true,
+  },
+}

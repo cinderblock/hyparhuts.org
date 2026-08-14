@@ -32,5 +32,11 @@ playwright-report/
 blob-report/
 playwright/.cache/
 
+# Dev feedback log — local iteration chatter, not project history
+feedback/
+
+# Web-ready media, generated from originals off-repo (see plans/media.md)
+public/media/
+
 # Misc
 *.tsbuildinfo

@@ -1,6 +1,13 @@
+import { Suspense, lazy } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import "@fontsource-variable/inter/index.css";
 import "./styles/global.css";
+
+// Folds to `null` in production, which leaves the dynamic import unreachable
+// and keeps the whole overlay — and its CSS — out of the built bundle.
+const FeedbackLayer = import.meta.env.DEV
+  ? lazy(() => import("./dev/feedback/FeedbackLayer"))
+  : null;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -38,5 +45,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      {FeedbackLayer && (
+        <Suspense fallback={null}>
+          <FeedbackLayer />
+        </Suspense>
+      )}
+    </>
+  );
 }

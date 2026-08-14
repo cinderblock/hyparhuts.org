@@ -1,29 +1,23 @@
 import type { MetaFunction } from "react-router";
 import { Link } from "react-router";
 
-export const meta: MetaFunction = () => {
-  return [
-    { title: "Page Not Found" },
-    {
-      name: "description",
-      content: "The page you're looking for doesn't exist.",
-    },
-  ];
-};
+export const meta: MetaFunction = () => [
+  { title: "Not found — HyparHuts" },
+  { name: "description", content: "That page doesn't exist." },
+  { name: "robots", content: "noindex" },
+];
 
 export default function NotFound() {
   return (
-    <main className="container">
-      <section className="hero">
-        <h1>404</h1>
-        <p className="tagline">Page Not Found</p>
-        <p className="intro">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <Link to="/" className="back-link">
-          Go back home
+    <main className="hero" data-fb="notfound">
+      <div className="hero-inner">
+        <p className="hero-eyebrow">404</p>
+        <h1>Folded flat</h1>
+        <p className="hero-sub">That page doesn't exist, or it moved.</p>
+        <Link to="/" className="hero-scroll">
+          Back to HyparHuts
         </Link>
-      </section>
+      </div>
     </main>
   );
 }
