@@ -32,11 +32,13 @@ playwright-report/
 blob-report/
 playwright/.cache/
 
-# Dev feedback log — local iteration chatter, not project history
-feedback/
+# Dev feedback log — local iteration chatter, not project history.
+# Anchored to the root: an unanchored `feedback/` also swallows
+# app/dev/feedback/, which is source.
+/feedback/
 
-# Web-ready media, generated from originals off-repo (see plans/media.md)
-public/media/
+# Web-ready media, generated from originals off-repo
+/public/media/
 
 # Misc
 *.tsbuildinfo
