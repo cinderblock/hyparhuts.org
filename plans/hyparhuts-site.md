@@ -73,13 +73,14 @@ adoptable by someone already building hexayurts.
 ## Plan / steps
 
 1. ~~Scaffold from ssg-base, git init on `master`~~ ✅
-2. **← current** Dev feedback layer + dev server running
-3. Site content and scroll-narrative layout
-4. Locate and process media; build a real media pipeline
-5. Create public GitHub repo, push
-6. Cloudflare Workers config (`wrangler.jsonc`) + redirect logic for
-   `.com` → `.org` and `www` → apex
-7. Wire deploy in `ops`
+2. ~~Dev feedback layer + dev server running~~ ✅
+3. ~~First pass at content and scroll-narrative layout~~ ✅
+4. ~~Public GitHub repo~~ ✅ — `github.com/cinderblock/hyparhuts.org`
+5. ~~Cloudflare Workers config + host canonicalisation~~ ✅ (written, **not
+   deployed and not verified against a real Worker**)
+6. **← current** Iterate on layout/content from feedback
+7. Locate and process media; build a real media pipeline
+8. Wire deploy in `ops`
 
 ## Feedback layer (dev only)
 
@@ -97,6 +98,18 @@ Design:
   the anchor, viewport size, and the comment text. Status field for triage.
 - The overlay must survive HMR without losing an in-progress draft.
 
+## How to act on feedback (for a future session)
+
+1. Read `feedback/feedback.jsonl`. Each `type: "comment"` record has an `id`,
+   the `route`, and an `anchor` with a CSS `selector` plus the anchored
+   element's `text`. The text is usually enough to grep straight to the source
+   — most prose lives in `app/content/chapters.ts`.
+2. Make the edit. HMR pushes it to the browser; Cameron's in-progress comment
+   is in `sessionStorage` and survives.
+3. Append a resolve record to the same file, which clears the pin live:
+   `{"type":"resolve","id":"fb_…","ts":"…","note":"what changed"}`
+   Append only — never rewrite the file, he may be writing to it.
+
 ## Findings / gotchas
 
 - `ssg-base`'s `vite.config.ts` has `allowedHosts: ["noook","noook.tsl"]` — machine
@@ -105,17 +118,39 @@ Design:
   (noted in that README).
 - Timelapse footage is 15–29 GB **per file**, 2014 vintage, ProRes-ish `.mov` from a
   BMPCC. Nothing web-usable without a transcode step. Don't naively copy into the repo.
+- **`prerender: true` emits no 404 document.** A splat route has no concrete path,
+  so unknown paths got only the empty SPA shell — no `<h1>`, nothing without JS.
+  Fixed by adding a concrete `/404` route and copying the prerendered
+  `404/index.html` to `404.html` in `scripts/emit-404.ts`, which is the filename
+  Cloudflare's `not_found_handling: "404-page"` looks for.
+- **`:nth-of-type` counts by tag, not by class.** `.chapter:nth-of-type(even)`
+  was also counting the premise/tarp/build sections, which inverted the media
+  alternation. Chapters now carry `data-media-side` from their own number.
+- React 19 does not expose JSX source locations on the fiber, so feedback
+  anchors always have `source: null`. The selector + element text is what does
+  the work. Not worth adding a Babel pass to recover it.
+- Playwright now runs against `bun run build && bun run preview` on :4173, not
+  the dev server. That is what makes the "no feedback overlay in production"
+  assertion meaningful, and it leaves :5173 free for a running dev server.
+- `resize_window` via the Chrome MCP silently did not resize this tab
+  (`innerWidth` stayed 1429), so **narrow-viewport layout has not been visually
+  checked**. The CSS below 60rem is a plain single-column stack.
 
 ## Progress log
 
 - [x] Survey environment, find source material
 - [x] Scaffold from ssg-base, `git init`, pristine first commit
-- [ ] Feedback layer
-- [ ] Dev server up
-- [ ] Content + layout
+- [x] Feedback layer — click/select → JSONL → live pin clearing, verified
+      end-to-end in a real browser
+- [x] Dev server up on :5173
+- [x] Content + layout, first pass. Seven chapters, premise, index, tarp,
+      materials, versions, footer
+- [x] Real static 404
+- [x] Tests (10 passing, chromium) + typecheck + format
+- [x] GitHub repo, pushed
+- [x] Cloudflare Workers config written (unverified)
+- [ ] Narrow-viewport visual check
 - [ ] Media pipeline
-- [ ] GitHub repo
-- [ ] Cloudflare Workers config
 - [ ] ops deploy wiring
 
 ## Open questions for the user
