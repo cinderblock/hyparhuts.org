@@ -159,8 +159,8 @@ Design:
    They're not on any drive I searched by folder name — likely still in the Photos
    library or on the phone. **Recommendation:** export the originals (live photos
    export as HEIC + MOV pairs) into a folder and point me at it.
-2. Is the 2014 timelapse footage worth a transcode pass for the site, or is it
-   superseded by newer builds?
+2. ~~Is the 2014 footage worth including?~~ **Answered 2026-08-14: yes.** See
+   `plans/media.md` for what's in it and the open questions that follow from that.
 3. Tone: build-manual (someone should be able to make one) vs. showcase (look what
    this is)? **Recommendation:** showcase-first scroll narrative with a real
    "Build one" section, since the V3 README already has manual-grade content.
