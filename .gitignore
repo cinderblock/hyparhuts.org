@@ -37,11 +37,11 @@ playwright/.cache/
 # app/dev/feedback/, which is source.
 /feedback/
 
-# NOTE: public/media/ is deliberately NOT ignored. The sources are 12-29 GB
-# ProRes files on local drives that CI can never see, so if the derived web
-# assets aren't committed, every deploy ships a site with missing media.
-# Commit the derived files; never the sources. See plans/media.md — if this
-# grows past ~100 MB, move it to R2 rather than reaching for Git LFS.
+# Web-ready media. Lives in R2, not in git — every re-encode would otherwise
+# be a permanent blob in history, and we expect to iterate on these. The
+# Worker serves /media/* from the bucket in production; Vite serves this
+# directory in dev. Regenerate with `bun run media`. See plans/media.md.
+/public/media/
 
 # Misc
 *.tsbuildinfo

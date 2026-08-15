@@ -67,22 +67,50 @@ test.describe("Home", () => {
     await expect(video).not.toHaveAttribute("autoplay", /.*/);
   });
 
-  test("ships every media file the page references", async ({
+  test("offers an AV1 source with a plain H.264 fallback", async ({ page }) => {
+    const sources = await page.locator("video source").evaluateAll((els) =>
+      els.map((el) => ({
+        src: el.getAttribute("src") ?? "",
+        type: el.getAttribute("type") ?? "",
+      })),
+    );
+    expect(sources.length).toBe(2);
+
+    // AV1 first, with a precise codecs string so a browser that can't decode
+    // it falls through instead of failing.
+    expect(sources[0]?.src).toMatch(/\.av1\.mp4$/);
+    expect(sources[0]?.type).toContain("av01.");
+
+    // The fallback must NOT carry a codecs string, or it stops being a
+    // universal fallback.
+    expect(sources[1]?.src).toMatch(/\.h264\.mp4$/);
+    expect(sources[1]?.type).toBe("video/mp4");
+  });
+
+  test("serves every media file the page references", async ({
     page,
     request,
   }) => {
-    const urls = await page
+    // public/media/ is gitignored — the files live in R2 and the Worker
+    // serves them in production. A CI checkout legitimately has none, so
+    // skip rather than fail. Run `bun run media` locally to exercise this.
+    const { existsSync, readdirSync } = await import("node:fs");
+    const havePublicMedia =
+      existsSync("public/media") && readdirSync("public/media").length > 0;
+    test.skip(
+      !havePublicMedia,
+      "no local public/media — production serves these from R2",
+    );
+
+    const srcs = await page
       .locator("video source")
-      .evaluateAll((els) =>
-        els.map((el) => (el as HTMLSourceElement).getAttribute("src") ?? ""),
-      );
+      .evaluateAll((els) => els.map((el) => el.getAttribute("src") ?? ""));
     const posters = await page
       .locator("video")
-      .evaluateAll((els) =>
-        els.map((el) => (el as HTMLVideoElement).getAttribute("poster") ?? ""),
-      );
-    expect(urls.length).toBeGreaterThan(0);
-    for (const path of [...urls, ...posters]) {
+      .evaluateAll((els) => els.map((el) => el.getAttribute("poster") ?? ""));
+
+    expect(srcs.length).toBeGreaterThan(0);
+    for (const path of [...srcs, ...posters]) {
       const res = await request.get(path);
       expect(res.status(), `${path} should be served`).toBe(200);
     }

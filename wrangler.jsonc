@@ -2,8 +2,8 @@
   // Cloudflare Workers static-assets deploy.
   //
   // Present so the deploy shape is in the repo, but NOT wired up yet — the
-  // actual deploy (routes, account, custom domains for hyparhuts.org and
-  // hyparhuts.com) is set up in the `ops` repo once the site is settled.
+  // bucket, routes, account and custom domains for hyparhuts.org and
+  // hyparhuts.com are set up in the `ops` repo once the site is settled.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "hyparhuts",
   "main": "worker/index.ts",
@@ -15,6 +15,15 @@
     // miss and should get the 404 page rather than an SPA shell.
     "not_found_handling": "404-page",
   },
+  // Video is served from R2, not from the assets bundle, so re-encodes don't
+  // land in git history. The Worker proxies /media/* to this bucket — the
+  // bucket itself stays private. See plans/media.md.
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "hyparhuts-media",
+    },
+  ],
   "observability": {
     "enabled": true,
   },
