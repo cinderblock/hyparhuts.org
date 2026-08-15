@@ -5,14 +5,40 @@ how to get them web-ready. Companion to `plans/hyparhuts-site.md`.
 
 ## Sources
 
-Sources live off-repo on local drives. **Derived web files in `public/media/`
-are committed.**
+Sources live off-repo. **Derived web files live in Cloudflare R2, not in git.**
 
-That reverses an earlier call to gitignore them, and the reason is simple: the
-sources are 12–29 GB ProRes files on `S:` and `P:` that CI can never see, so an
-ignored `public/media/` means every deploy ships a site with missing video.
-Commit the derived files; never the sources. If the directory grows past about
-100 MB, move it to R2 rather than reaching for Git LFS.
+Decided 2026-08-14 after costing the alternatives. R2 is $0/month at any
+plausible traffic for this site — 10 GB storage free, and R2 charges no egress
+at all — and keeping video out of git matters because we expect to iterate on
+encodes, and every attempt would otherwise be a permanent blob.
+
+The Worker proxies `/media/*` to the bucket, so paths are identical in dev and
+production: Vite serves `public/media/` locally, R2 serves it deployed.
+Nothing in the app knows the difference. `public/media/` is gitignored;
+`bun run media` regenerates it from the originals.
+
+Rejected, with reasons:
+
+| Option                 | Why not                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| Commit to git          | Permanent history for every re-encode. Tried it; reverted.                                              |
+| Git LFS                | 1 GB/month bandwidth quota is account-wide and CI checkouts consume it. Worst option for a public repo. |
+| Vimeo                  | ~$12–25/mo for what R2 does free.                                                                       |
+| YouTube                | Branded player, ads, ~1 MB iframe, end-screen recommendations, sets cookies → consent banner.           |
+| Cloudflare Stream      | ~$0.15–3/mo. Real ABR, but overkill for short silent clips. Revisit if a long piece appears.            |
+| Self-host on steamboat | Equally free and you already run Caddy there, but adds an uptime dependency for static files.           |
+
+### Archive — separate question, still open
+
+`P:`, `S:`, `T:` and `W:` are all SMB shares on **one server**, `uberfall.tsl`,
+same pool — identical used/free on all four. So the copies of `d10b`, `d11a`
+and `d11b` that exist "in both P: and S:" are **not redundancy**.
+
+Unique originals total **100.9 GB**. A separate archive bucket would cost about
+**$1.40/month** ($17/year). `servers/uberfall/docker-compose.yml` runs only
+Caddy and there is no restic/borg/sanoid/rclone anywhere in ops, so ops does
+not know about any backup — though the storage layer may be managed on the
+host outside the repo. Worth confirming before assuming the footage is safe.
 
 ### 2014 build timelapse — the main asset
 
@@ -69,32 +95,45 @@ it. Not on C:, P:, S:, T: or W: under any hut-related folder name. Almost
 certainly still in the Photos library. **This is the highest-value gap** — it
 is the only known footage of the hinge technique, which is idea #1.
 
-## Recipe
+## Encoding
 
-ProRes decodes fast but there is 115 GB of it, so cap threads — this is a
-6-core workstation that other things run on.
-
-Overview cut used for the first proof of concept:
-
-```sh
-ffmpeg -threads 4 -i "<clip>.mov" \
-  -vf "framestep=31,scale=1280:-2,setpts=N/24/TB" -r 24 -an \
-  -c:v libx264 -crf 23 -preset medium -pix_fmt yuv420p -movflags +faststart \
-  -y public/media/build-d09-720.mp4
-```
+`bun run media` does all of this; `scripts/media.ts` is the source of truth.
+Add clips to the `CLIPS` array there.
 
 `framestep=31` over `d09`'s 33,912 frames gives ~1,094 frames, ~46 s at 24 fps
-— roughly 31× on top of the in-camera compression. Adjust `framestep` to trade
-length against choppiness; below about 20× the motion stays readable, above it
-starts to strobe.
+— roughly 31× on top of the in-camera compression. Lower it for a longer,
+smoother clip; raise it for shorter and choppier. Below about 20× motion stays
+readable; above it starts to strobe.
 
-Add a VP9/WebM sibling and a poster frame before anything ships:
+One decode pass of the ProRes feeds both encoders via a `split` filter, capped
+at 4 threads — six physical cores, shared with a human.
 
-```sh
-ffmpeg -threads 4 -i public/media/build-d09-720.mp4 \
-  -c:v libvpx-vp9 -crf 34 -b:v 0 -row-mt 1 -an -y public/media/build-d09-720.webm
-ffmpeg -i public/media/build-d09-720.mp4 -ss 0 -frames:v 1 -y public/media/build-d09-poster.jpg
-```
+### What the measurements actually said
+
+Same 46 s clip, all at 720p unless noted:
+
+| Encode           | Size        | Verdict                                       |
+| ---------------- | ----------- | --------------------------------------------- |
+| x264 CRF 23      | 5.06 MB     | The first attempt. Wasteful.                  |
+| **AV1 CRF 40**   | **3.13 MB** | **Shipped.** Quality tier.                    |
+| **x264 CRF 26**  | **3.24 MB** | **Shipped.** Universal fallback.              |
+| AV1 CRF 46       | 2.20 MB     |                                               |
+| AV1 CRF 52       | 1.59 MB     | Visibly smears anyone moving                  |
+| AV1 960p CRF 46  | 1.53 MB     | Softer than 720p CRF 52 at the same size      |
+| x264 960p CRF 28 | 1.57 MB     |                                               |
+| x265 CRF 30      | 1.68 MB     | Useless — no HEVC-in-MP4 in Chrome or Firefox |
+
+Three things worth keeping:
+
+- **At equal size, 720p at a high CRF beats 960p at a low one.** Compression
+  artifacts on a locked-off wide shot are less objectionable than softness.
+- **Don't compress harder than this.** The reason to squeeze was git history.
+  On R2, storage and egress are both free, so sub-2 MB buys nothing and costs
+  visible quality on anyone moving.
+- **AV1 needs a precise `codecs` string** in `<source type>` so browsers that
+  can't decode it fall through. The H.264 fallback must _not_ have one, or it
+  stops being universal. Also: input-seeking (`-ss` before `-i`) an AV1 stream
+  drops the frame — seek on output when grabbing posters.
 
 ## Plan
 
@@ -124,7 +163,8 @@ ffmpeg -i public/media/build-d09-720.mp4 -ss 0 -frames:v 1 -y public/media/build
 ## Things not to do
 
 - Don't copy source `.mov` files into the repo. They are 12–29 GB each.
-- Don't re-add `public/media/` to `.gitignore` — see the reasoning above.
+- Don't commit anything to `public/media/`. It is gitignored on purpose;
+  media belongs in R2. This was tried and reverted — see above.
 - Don't autoplay the timelapse. It is several MB and nothing but motion.
-- Don't autoplay with sound, and don't autoplay at all without
-  `prefers-reduced-motion` being respected.
+- Don't compress below ~3 MB chasing a number. See the measurements.
+- Don't add a `codecs` string to the H.264 `<source>`.
