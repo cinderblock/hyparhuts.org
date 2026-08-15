@@ -81,12 +81,26 @@ being covered.
 
 ### Stills and CAD
 
-- `T:\Tom Sawyer Labs\Open Source Projects\hyparhut\Hypar Hut roof plan.jpg` —
-  candidate for the `hypar-roof` diagram slot.
-- `github.com/cinderblock/HyparHut` (branch `V3`) — `Layout.JPG`, plus
-  `Layout.sldprt` / `Edge.sldprt` parameterized sketches. Rendering these is
-  probably the best route to real geometry diagrams.
+- **`Layout.JPG`** in `github.com/cinderblock/HyparHut` (branch `V3`), 1446×886
+  — a line drawing of the V3 hut with the hypar roof surface picked out in
+  blue. **In use** for the `hypar-roof` slot, cropped and padded to 1200×866.
+  Fetched and processed by `bun run media`.
+- `T:\…\hyparhut\Hypar Hut roof plan.jpg`, 1307×1144 — the dimensioned roof
+  cut plan out of SolidWorks. Dozens of dimensions on a gradient background;
+  far too dense to explain anything at web size. Better as evidence in the
+  Build section that real parameterized geometry exists, probably as a
+  thumbnail that links to the full file. **Not used yet.**
+- `Layout.sldprt` / `Edge.sldprt` in the same repo — parameterized sketches.
+  Rendering these is the best route to further geometry diagrams.
 - `github.com/cinderblock/HyparShade` — separate shade-structure project.
+
+Fetching from GitHub: use `gh api -H "Accept: application/vnd.github.raw"`.
+The `contents` endpoint's base64 body silently produced a **zero-byte file**
+for this JPEG; the raw endpoint gets it intact.
+
+Line drawings sit on a light card (`.media-image-diagram`) in both colour
+schemes. Inverting them for dark mode would wreck the blue, and technical
+drawings live on paper anyway. Verified in both schemes.
 
 ### Still missing
 
@@ -168,3 +182,8 @@ Three things worth keeping:
 - Don't autoplay the timelapse. It is several MB and nothing but motion.
 - Don't compress below ~3 MB chasing a number. See the measurements.
 - Don't add a `codecs` string to the H.264 `<source>`.
+- Don't ship an `<img>` without `width`/`height`. Without them it collapses to
+  a line box, which shifts the layout on load **and** stops `loading="lazy"`
+  from ever firing — there is no box for the observer to intersect, so the
+  image silently never appears. This happened; `tests/home.spec.ts` guards it.
+- Don't use the `contents` API for binaries — it returned a zero-byte JPEG.

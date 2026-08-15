@@ -19,7 +19,8 @@
  */
 
 import { spawn } from "node:child_process";
-import { mkdir, stat } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import { mkdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 type Clip = {
@@ -29,6 +30,16 @@ type Clip = {
   /** Keep 1 frame in N. Trades length against choppiness; ~31 reads well. */
   framestep: number;
   poster: { atSeconds: number };
+};
+
+type Still = {
+  name: string;
+  /** Local path, or a GitHub repo path fetched via the raw endpoint. */
+  source:
+    | { kind: "file"; path: string }
+    | { kind: "gh"; repo: string; path: string; ref: string };
+  /** ffmpeg filter chain applied before export. */
+  filter: string;
 };
 
 const OUT_DIR = "public/media";
@@ -42,6 +53,22 @@ export const CLIPS: Clip[] = [
     framestep: 31,
     // Late enough that the poster shows walls standing, not a bare floor.
     poster: { atSeconds: 41 },
+  },
+];
+
+export const STILLS: Still[] = [
+  {
+    name: "hypar-geometry",
+    // The V3 layout drawing: the twisted roof surface picked out in blue.
+    source: {
+      kind: "gh",
+      repo: "cinderblock/HyparHut",
+      path: "Layout.JPG",
+      ref: "V3",
+    },
+    // Bounds measured off the 1446x886 original, then padded so nothing
+    // touches the frame edge.
+    filter: "crop=1190:856:248:26,pad=iw+80:ih+60:40:30:white,scale=1200:-2",
   },
 ];
 
@@ -158,5 +185,95 @@ async function encode(clip: Clip): Promise<void> {
   console.log(`${clip.name}: done`);
 }
 
+/**
+ * `gh api` with the raw Accept header. The `contents` endpoint's base64 body
+ * silently produced a zero-byte file for this JPEG, so don't go back to it.
+ */
+function ghRaw(
+  repo: string,
+  path: string,
+  ref: string,
+  dest: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const out = createWriteStream(dest);
+    const proc = spawn(
+      "gh",
+      [
+        "api",
+        "-H",
+        "Accept: application/vnd.github.raw",
+        `repos/${repo}/contents/${path}?ref=${ref}`,
+      ],
+      { stdio: ["ignore", "pipe", "inherit"] },
+    );
+    // Both the process and the write stream have to finish, and either can
+    // finish first. Registering the stream listener inside the process
+    // callback loses the race and hangs forever when the stream closes first.
+    let procDone = false;
+    let streamDone = false;
+    const settle = () => {
+      if (procDone && streamDone) resolve();
+    };
+
+    proc.stdout.pipe(out);
+    proc.on("error", reject);
+    proc.on("close", (code) => {
+      if (code !== 0) return reject(new Error(`gh exited ${code}`));
+      procDone = true;
+      settle();
+    });
+    out.on("error", reject);
+    out.on("close", () => {
+      streamDone = true;
+      settle();
+    });
+  });
+}
+
+async function exportStill(still: Still): Promise<void> {
+  const png = join(OUT_DIR, `${still.name}.png`);
+  const webp = join(OUT_DIR, `${still.name}.webp`);
+
+  if (!force && (await exists(png)) && (await exists(webp))) {
+    console.log(`${still.name}: up to date`);
+    return;
+  }
+
+  let src: string;
+  if (still.source.kind === "file") {
+    src = still.source.path;
+    if (!(await exists(src))) {
+      console.error(`${still.name}: SOURCE MISSING — ${src}. Skipping.`);
+      return;
+    }
+  } else {
+    src = join(OUT_DIR, `.${still.name}.src`);
+    console.log(
+      `${still.name}: fetching ${still.source.path} from ${still.source.repo}…`,
+    );
+    await ghRaw(still.source.repo, still.source.path, still.source.ref, src);
+  }
+
+  console.log(`${still.name}: exporting…`);
+  await run(["-v", "error", "-i", src, "-vf", still.filter, "-y", png]);
+  await run([
+    "-v",
+    "error",
+    "-i",
+    src,
+    "-vf",
+    still.filter,
+    "-q:v",
+    "82",
+    "-y",
+    webp,
+  ]);
+
+  if (still.source.kind === "gh") await rm(src, { force: true });
+  console.log(`${still.name}: done`);
+}
+
 await mkdir(OUT_DIR, { recursive: true });
 for (const clip of CLIPS) await encode(clip);
+for (const still of STILLS) await exportStill(still);

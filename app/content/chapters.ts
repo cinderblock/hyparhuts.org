@@ -14,6 +14,17 @@ export type Media = {
   slot: string;
   kind: "photo" | "clip" | "diagram";
   caption: string;
+  /**
+   * The real asset, once one exists — expects `<name>.webp` with a `<name>.png`
+   * fallback under `/media`. Absent means the slot renders as a labelled
+   * placeholder, so what is missing stays visible.
+   *
+   * Intrinsic dimensions are required, not optional. Without them the `<img>`
+   * collapses to a line box, which both causes a large layout shift on load
+   * and stops `loading="lazy"` from ever firing — there is no box for the
+   * intersection observer to hit.
+   */
+  asset?: { name: string; width: number; height: number };
 };
 
 export type Chapter = {
@@ -115,7 +126,9 @@ export const chapters: Chapter[] = [
     media: {
       slot: "hypar-roof",
       kind: "diagram",
-      caption: "Roof geometry — the twist that makes it a hypar",
+      caption:
+        "The V3 geometry. The blue curves are the roof surface — straight edges, doubly-curved middle.",
+      asset: { name: "hypar-geometry", width: 1200, height: 866 },
     },
   },
   {

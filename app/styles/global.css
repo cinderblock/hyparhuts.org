@@ -478,6 +478,22 @@ code {
   border: 1px solid var(--color-border);
 }
 
+.media-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+/* Line drawings are black-and-blue on white. Inverting them for dark mode
+   would wreck the blue, so they sit on a light card in both schemes — which
+   is what technical drawings do on paper anyway. */
+.media-image-diagram {
+  padding: 0.5rem;
+  background: #fbfaf7;
+}
+
 .media figcaption {
   color: var(--color-text-muted);
   font-size: 0.85rem;

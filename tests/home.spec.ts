@@ -116,6 +116,43 @@ test.describe("Home", () => {
     }
   });
 
+  test("every image declares intrinsic dimensions and actually loads", async ({
+    page,
+  }) => {
+    // Both halves matter. Without width/height an <img> collapses to a line
+    // box, which shifts the layout on load AND stops loading="lazy" from ever
+    // firing — there is no box for the observer to intersect, so the image
+    // silently never appears. That happened; this guards it.
+    const imgs = page.locator("picture img");
+    const count = await imgs.count();
+    expect(count).toBeGreaterThan(0);
+
+    for (let i = 0; i < count; i++) {
+      const img = imgs.nth(i);
+      const src = await img.getAttribute("src");
+      expect(
+        await img.getAttribute("width"),
+        `${src} needs width`,
+      ).toBeTruthy();
+      expect(
+        await img.getAttribute("height"),
+        `${src} needs height`,
+      ).toBeTruthy();
+      expect(
+        await img.getAttribute("alt"),
+        `${src} needs alt text`,
+      ).toBeTruthy();
+
+      await img.scrollIntoViewIfNeeded();
+      await expect(async () => {
+        const loaded = await img.evaluate(
+          (el: HTMLImageElement) => el.complete && el.naturalWidth > 0,
+        );
+        expect(loaded, `${src} never loaded`).toBe(true);
+      }).toPass({ timeout: 10_000 });
+    }
+  });
+
   test("links out to the design files", async ({ page }) => {
     await expect(
       page.getByRole("link", { name: "Design files on GitHub" }),
