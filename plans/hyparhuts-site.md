@@ -132,9 +132,21 @@ Design:
 - Playwright now runs against `bun run build && bun run preview` on :4173, not
   the dev server. That is what makes the "no feedback overlay in production"
   assertion meaningful, and it leaves :5173 free for a running dev server.
-- `resize_window` via the Chrome MCP silently did not resize this tab
-  (`innerWidth` stayed 1429), so **narrow-viewport layout has not been visually
-  checked**. The CSS below 60rem is a plain single-column stack.
+- `resize_window` via the Chrome MCP silently did not resize the tab
+  (`innerWidth` stayed 1429). **Don't trust it.** Use Playwright's
+  `setViewportSize` instead — that works, and `tests/responsive.spec.ts` now
+  covers 375/393/768/959/961 px for horizontal overflow, text size and
+  stacking. Verified visually at 393 px too: hero, premise, watch, a chapter
+  and the build section all read correctly.
+- Playwright's browser **cannot be launched from a `bun` script on Windows**
+  (`launch: Timeout 180000ms exceeded` on the remote-debugging pipe). It works
+  fine under the Playwright test runner, which uses node. For one-off browser
+  work, add a temporary spec rather than a standalone script.
+- On a phone, chapter media stacks _above_ its heading, because the DOM order
+  is media-then-text to make the desktop sticky column work. With real photos
+  that is a normal editorial pattern (image, headline, prose); it only looks
+  odd right now because the placeholders are empty. Revisit once real images
+  land — don't "fix" it before then.
 
 ## Progress log
 
@@ -149,8 +161,13 @@ Design:
 - [x] Tests (10 passing, chromium) + typecheck + format
 - [x] GitHub repo, pushed
 - [x] Cloudflare Workers config written (unverified)
-- [ ] Narrow-viewport visual check
-- [ ] Media pipeline
+- [x] Narrow-viewport check — `tests/responsive.spec.ts`, 20 assertions across
+      5 widths, plus a visual pass at 393 px
+- [x] Media pipeline — `bun run media`, AV1 + H.264, output to R2
+- [ ] **Blocked on Cameron:** force-push the history rewrite (staged and
+      verified locally; backup bundle at `~/hyparhuts-prerewrite-backup.bundle`)
+- [ ] **Blocked on Cameron:** create the `hyparhuts-media` R2 bucket via ops
+- [ ] Remaining media slots (4 more clips, roof diagram, hinge close-ups)
 - [ ] ops deploy wiring
 
 ## Open questions for the user
