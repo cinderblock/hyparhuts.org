@@ -97,13 +97,14 @@ export default function Home() {
           <div className="watch-inner">
             <h2>Watch one get built</h2>
             <p>
-              Three days in the shop, September 2014 — bare floor to walls
-              standing. Foam arrives, gets cut and wrapped, and goes up.
+              Three days in the shop, from a bare floor to walls standing. The
+              camera never moves; everything you see is the structure coming
+              together around it.
             </p>
             <VideoFigure
-              name="build-d09"
-              caption="Day one: delivery, layout, wrapping, and the first panels standing."
-              meta="0:46 · silent"
+              name="build-full"
+              caption="September 2014, compressed to two minutes. Foam arrives, gets cut and wrapped, and the walls go up."
+              meta="2:03 · silent"
             />
           </div>
         </section>

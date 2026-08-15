@@ -64,8 +64,10 @@ export const CLIPS: Clip[] = [
     name: "build-full",
     sources: BUILD_2014,
     framestep: 40,
-    // Into day two, where the wrapped structure is standing.
-    poster: { atSeconds: 74 },
+    // Day two, wrapped structure standing with someone beside it for scale.
+    // Checked against candidates rather than guessed: 74 s landed on a lunch
+    // break, which is a poor thumbnail for "watch one get built".
+    poster: { atSeconds: 42 },
   },
   {
     // Day one alone, kept as the shorter alternative to compare against.

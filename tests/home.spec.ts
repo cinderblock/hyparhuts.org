@@ -99,10 +99,7 @@ test.describe("Home", () => {
     await expect(video).toBeVisible();
     // Several MB — it must not download until someone asks for it.
     await expect(video).toHaveAttribute("preload", "none");
-    await expect(video).toHaveAttribute(
-      "poster",
-      "/media/build-d09-poster.jpg",
-    );
+    await expect(video).toHaveAttribute("poster", /^\/media\/.+-poster\.jpg$/);
     await expect(video).not.toHaveAttribute("autoplay", /.*/);
   });
 

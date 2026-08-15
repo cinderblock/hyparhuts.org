@@ -184,19 +184,44 @@ Three things worth keeping:
   stops being universal. Also: input-seeking (`-ss` before `-i`) an AV1 stream
   drops the frame — seek on output when grabbing posters.
 
+## The montage
+
+`build-full` — all five clips concatenated chronologically, `framestep=40`.
+**2:02.8, 2,947 frames, 8.8 MB AV1 / 11.2 MB H.264.** One decode pass over all
+115 GB via a `concat` filter; roughly 40 minutes to encode.
+
+`setsar=1` on each input is required — `concat` refuses inputs whose sample
+aspect ratios differ, and the BMPCC files declare 96:96 rather than 1:1.
+
+Chosen over five separate clips because "Watch one get built" implies a
+complete build and five clips is a chore to sit through.
+
+**It ends weak.** The peak is the wrapped structure standing, around the
+one-third mark. The last third is the `d11a`/`d11b` setup — a different camera
+position, a truck in frame, and a lot of empty floor. Two options if that
+bothers anyone:
+
+- Cut to `d09` + `d10a` + `d10b` only, ending with the hut standing. Shorter,
+  stronger, and arguably more honest since `d11` looks like a separate session
+  rather than the completion of this one.
+- Leave it as a full three-day record.
+
+Poster frames are worth checking rather than guessing. The first pick landed
+on a lunch break; 42 s has the wrapped structure prominent with someone beside
+it for scale.
+
 ## Plan
 
 1. ~~Characterise the footage~~ ✅
-2. ~~One proof-of-concept overview clip from `d09`~~ ✅ — 46 s, 720p, 5.1 MB
-   H.264 + 2.9 MB VP9 + a poster frame.
-3. ~~Place it~~ ✅ — a "Watch one get built" section between the premise and
-   the index of ideas, click-to-play. **Provisional**; see open question 1.
-4. **← current** Judge length, speed and framing in context, then adjust.
-5. Cut the remaining slots that the timelapse _can_ serve.
-6. Find the hinge live photos; shoot new close-ups for `edge-trim` and
+2. ~~Proof-of-concept clip from `d09`~~ ✅ — 46 s, kept as the short alternative.
+3. ~~Place it~~ ✅ — "Watch one get built", between the premise and the index.
+4. ~~Full three-day montage~~ ✅ — `build-full`, 2:03, now the one on the page.
+5. **← current** Judge length, speed and the weak ending in context.
+6. Cut the remaining slots that the timelapse _can_ serve.
+7. Find the hinge live photos; shoot new close-ups for `edge-trim` and
    `hinge-assembly` if they can't be found.
-7. Render geometry diagrams from the SolidWorks sketches.
-8. Build a `bun run media` script so the whole set regenerates from sources.
+8. Render geometry diagrams from the SolidWorks sketches.
+9. Build a `bun run media` script so the whole set regenerates from sources.
 
 ## Open questions
 
