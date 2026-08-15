@@ -1,5 +1,15 @@
+import { existsSync, readdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { chapters } from "../app/content/chapters";
+
+/**
+ * `public/media/` is gitignored — the files live in R2 and the Worker serves
+ * them in production. A CI checkout legitimately has none, so anything that
+ * needs the bytes present has to skip rather than fail. Assertions about
+ * *markup* still run everywhere; only assertions about *bytes* are gated.
+ */
+const HAVE_LOCAL_MEDIA =
+  existsSync("public/media") && readdirSync("public/media").length > 0;
 
 test.describe("Home", () => {
   test.beforeEach(async ({ page }) => {
@@ -91,14 +101,8 @@ test.describe("Home", () => {
     page,
     request,
   }) => {
-    // public/media/ is gitignored — the files live in R2 and the Worker
-    // serves them in production. A CI checkout legitimately has none, so
-    // skip rather than fail. Run `bun run media` locally to exercise this.
-    const { existsSync, readdirSync } = await import("node:fs");
-    const havePublicMedia =
-      existsSync("public/media") && readdirSync("public/media").length > 0;
     test.skip(
-      !havePublicMedia,
+      !HAVE_LOCAL_MEDIA,
       "no local public/media — production serves these from R2",
     );
 
@@ -116,13 +120,13 @@ test.describe("Home", () => {
     }
   });
 
-  test("every image declares intrinsic dimensions and actually loads", async ({
+  test("every image declares intrinsic dimensions and alt text", async ({
     page,
   }) => {
-    // Both halves matter. Without width/height an <img> collapses to a line
-    // box, which shifts the layout on load AND stops loading="lazy" from ever
-    // firing — there is no box for the observer to intersect, so the image
-    // silently never appears. That happened; this guards it.
+    // Without width/height an <img> collapses to a line box, which shifts the
+    // layout on load AND stops loading="lazy" from ever firing — there is no
+    // box for the observer to intersect, so the image silently never appears.
+    // That happened. This is a markup check, so it runs without the bytes.
     const imgs = page.locator("picture img");
     const count = await imgs.count();
     expect(count).toBeGreaterThan(0);
@@ -142,7 +146,20 @@ test.describe("Home", () => {
         await img.getAttribute("alt"),
         `${src} needs alt text`,
       ).toBeTruthy();
+    }
+  });
 
+  test("every image actually decodes", async ({ page }) => {
+    test.skip(
+      !HAVE_LOCAL_MEDIA,
+      "no local public/media — production serves these from R2",
+    );
+
+    const imgs = page.locator("picture img");
+    const count = await imgs.count();
+    for (let i = 0; i < count; i++) {
+      const img = imgs.nth(i);
+      const src = await img.getAttribute("src");
       await img.scrollIntoViewIfNeeded();
       await expect(async () => {
         const loaded = await img.evaluate(
