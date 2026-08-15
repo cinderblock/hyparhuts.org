@@ -175,6 +175,30 @@ export default function Home() {
                 ))}
               </tbody>
             </table>
+            <figure className="plan" data-fb="roof-cut-plan">
+              <a href="/media/roof-cut-plan.png">
+                <picture>
+                  <source
+                    srcSet="/media/roof-cut-plan.webp"
+                    type="image/webp"
+                  />
+                  <img
+                    src="/media/roof-cut-plan.png"
+                    alt="Dimensioned cut plan for the roof: a square outline whose four edges all curve inward, annotated with offsets every few inches along each edge."
+                    width={1100}
+                    height={962}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
+              </a>
+              <figcaption>
+                The roof cut plan. Every edge curves — that is what produces the
+                twist. Overall 96.5″ × 96.75″, straight off 4′×8′ sheets.{" "}
+                <span className="plan-hint">Open it for the full size.</span>
+              </figcaption>
+            </figure>
+
             <p className="build-note">
               Cut patterns and edging calculations live in the design repo as
               parameterized SolidWorks sketches, so you can change dimensions

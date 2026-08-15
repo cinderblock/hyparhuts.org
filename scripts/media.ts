@@ -93,6 +93,17 @@ export const STILLS: Still[] = [
     // touches the frame edge.
     filter: "crop=1190:856:248:26,pad=iw+80:ih+60:40:30:white,scale=1200:-2",
   },
+  {
+    name: "roof-cut-plan",
+    // Only on Cameron's LAN; the script skips cleanly when T: is absent.
+    source: {
+      kind: "file",
+      path: "T:/Tom Sawyer Labs/Open Source Projects/hyparhut/Hypar Hut roof plan.jpg",
+    },
+    // SolidWorks exports onto a blue-grey gradient. Flatten it toward paper
+    // white and drop the colour so it reads as a drawing, not a screenshot.
+    filter: "eq=brightness=0.06:contrast=1.22:saturation=0,scale=1100:-2",
+  },
 ];
 
 const force = process.argv.includes("--force");
