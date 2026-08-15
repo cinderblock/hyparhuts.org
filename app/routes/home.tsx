@@ -8,16 +8,32 @@ const TITLE = "HyparHuts — temporary structures that set up in five minutes";
 const DESCRIPTION =
   "A set of techniques for durable, fast-deploying panel shelters: fabric hinges, reinforced edges, house wrap, an accordion fold, and a twisted hypar roof.";
 
+const SITE = "https://hyparhuts.org";
+// Absolute, because scrapers do not resolve relative URLs. Lives at the site
+// root rather than under /media so it never depends on the R2 bucket.
+const OG_IMAGE = `${SITE}/og.png`;
+const OG_IMAGE_ALT =
+  "HyparHuts — a line drawing of the hut showing its twisted hypar roof";
+
 export const meta: MetaFunction = () => [
   { title: TITLE },
   { name: "description", content: DESCRIPTION },
   { property: "og:type", content: "website" },
+  { property: "og:site_name", content: "HyparHuts" },
   { property: "og:title", content: TITLE },
   { property: "og:description", content: DESCRIPTION },
-  { property: "og:url", content: "https://hyparhuts.org/" },
+  { property: "og:url", content: `${SITE}/` },
+  { property: "og:image", content: OG_IMAGE },
+  { property: "og:image:width", content: "1200" },
+  { property: "og:image:height", content: "630" },
+  { property: "og:image:alt", content: OG_IMAGE_ALT },
+  // summary_large_image without an image renders a blank card, which is what
+  // this was doing before.
   { name: "twitter:card", content: "summary_large_image" },
   { name: "twitter:title", content: TITLE },
   { name: "twitter:description", content: DESCRIPTION },
+  { name: "twitter:image", content: OG_IMAGE },
+  { name: "twitter:image:alt", content: OG_IMAGE_ALT },
 ];
 
 const MATERIALS = [

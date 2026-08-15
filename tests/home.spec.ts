@@ -41,6 +41,35 @@ test.describe("Home", () => {
     );
   });
 
+  test("declares a social card image that exists", async ({
+    page,
+    request,
+  }) => {
+    // A summary_large_image card with no image renders blank. That shipped.
+    const card = page.locator('meta[name="twitter:card"]');
+    await expect(card).toHaveAttribute("content", "summary_large_image");
+
+    for (const sel of [
+      'meta[property="og:image"]',
+      'meta[name="twitter:image"]',
+    ]) {
+      const url = await page.locator(sel).getAttribute("content");
+      // Scrapers don't resolve relative URLs.
+      expect(url, `${sel} must be absolute`).toMatch(/^https:\/\//);
+
+      // Fetch by path against the test server — the absolute URL points at
+      // production, which isn't deployed yet.
+      const res = await request.get(new URL(url!).pathname);
+      expect(res.status(), `${url} should be served`).toBe(200);
+      expect(res.headers()["content-type"]).toContain("image/");
+    }
+
+    await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+      "content",
+      /.{10,}/,
+    );
+  });
+
   test("renders every idea, with a heading and an index entry that reaches it", async ({
     page,
   }) => {

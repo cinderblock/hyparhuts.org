@@ -109,6 +109,34 @@ Line drawings sit on a light card (`.media-image-diagram`) in both colour
 schemes. Inverting them for dark mode would wreck the blue, and technical
 drawings live on paper anyway. Verified in both schemes.
 
+### The social card
+
+`public/og.png`, 1200×630, **committed** — it lives at the site root rather
+than under `/media` because scrapers must reach it without depending on the R2
+bucket, and it is a one-off brand asset, not derived footage.
+
+Built from the same `Layout.JPG`, inverted. The happy accident: negating turns
+the drawing's blue curves almost exactly our orange accent, and the black
+construction lines white. Regenerate with:
+
+```sh
+# fonts copied to the work dir first — ffmpeg's filter parser and Windows
+# drive-letter colons do not get along
+ffmpeg -f lavfi -i "color=c=0x221f1a:s=1200x630" -i hypar-geometry.png \
+  -filter_complex "\
+[1:v]negate,scale=500:-1,format=rgba,colorkey=0x000000:0.32:0.12[art];\
+[0:v][art]overlay=x=655:y=(H-h)/2[c1];\
+[c1]drawtext=fontfile=semi.ttf:text='T E M P O R A R Y   S T R U C T U R E S':fontcolor=0xe2803f:fontsize=20:x=74:y=204[c2];\
+[c2]drawtext=fontfile=bold.ttf:text='HyparHuts':fontcolor=0xf2ede3:fontsize=82:x=70:y=248[c3];\
+[c3]drawtext=fontfile=semi.ttf:text='Up in five minutes. Folds flat.':fontcolor=0xa89e8e:fontsize=27:x=74:y=360[out]" \
+  -map "[out]" -frames:v 1 -y public/og.png
+```
+
+`colorkey` drops the black field the negate leaves behind, so the drawing
+floats on the card colour instead of sitting in a visible box. Without it
+there is an obvious rectangle, because pure black reads against the warm
+`#221f1a`.
+
 ### Still missing
 
 The iOS live-photo hinge sequence and the short video Cameron assembled from
