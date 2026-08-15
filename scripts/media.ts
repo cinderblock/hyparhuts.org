@@ -26,7 +26,8 @@ import { join } from "node:path";
 type Clip = {
   /** Output basename under public/media. */
   name: string;
-  source: string;
+  /** Concatenated in order. All must share resolution and frame rate. */
+  sources: string[];
   /** Keep 1 frame in N. Trades length against choppiness; ~31 reads well. */
   framestep: number;
   poster: { atSeconds: number };
@@ -45,11 +46,31 @@ type Still = {
 const OUT_DIR = "public/media";
 
 const SHARE_CAM = "S:/Cam's Crap/HyparHut Build Recordings";
+const SHARE_TL = "P:/Projects/HyparHut Timelapse";
+
+/** The five 2014 clips in chronological order. See plans/media.md. */
+const BUILD_2014 = [
+  `${SHARE_CAM}/Blackmagic Pocket Cinema Camera_1_2014-09-09_1340_C0000.mov`,
+  `${SHARE_CAM}/Blackmagic Pocket Cinema Camera_1_2014-09-10_1223_C0000.mov`,
+  `${SHARE_TL}/Blackmagic Pocket Cinema Camera_1_2014-09-10_1916_C0000.mov`,
+  `${SHARE_TL}/Blackmagic Pocket Cinema Camera_1_2014-09-11_1922_C0000.mov`,
+  `${SHARE_TL}/Blackmagic Pocket Cinema Camera_1_2014-09-11_1939_C0000.mov`,
+];
 
 export const CLIPS: Clip[] = [
   {
+    // The whole three-day build as one piece. 4,910 s of source at 24 fps is
+    // 117,840 frames; framestep 40 gives ~2,946, about 2:03 at 24 fps.
+    name: "build-full",
+    sources: BUILD_2014,
+    framestep: 40,
+    // Into day two, where the wrapped structure is standing.
+    poster: { atSeconds: 74 },
+  },
+  {
+    // Day one alone, kept as the shorter alternative to compare against.
     name: "build-d09",
-    source: `${SHARE_CAM}/Blackmagic Pocket Cinema Camera_1_2014-09-09_1340_C0000.mov`,
+    sources: [BUILD_2014[0]!],
     framestep: 31,
     // Late enough that the poster shows walls standing, not a bare floor.
     poster: { atSeconds: 41 },
@@ -108,16 +129,31 @@ async function encode(clip: Clip): Promise<void> {
     return;
   }
 
-  if (!(await exists(clip.source))) {
-    console.error(`${clip.name}: SOURCE MISSING — ${clip.source}`);
-    console.error("  These live on the uberfall.tsl shares. Skipping.");
-    return;
+  for (const source of clip.sources) {
+    if (!(await exists(source))) {
+      console.error(`${clip.name}: SOURCE MISSING — ${source}`);
+      console.error("  These live on the uberfall.tsl shares. Skipping.");
+      return;
+    }
   }
 
-  console.log(`${clip.name}: encoding…`);
-  const chain = `[0:v]framestep=${clip.framestep},scale=1280:-2,setpts=N/24/TB,split=2[a][b]`;
+  console.log(`${clip.name}: encoding ${clip.sources.length} source(s)…`);
 
-  // One decode pass of a ~20 GB ProRes file, split to both encoders.
+  // Decimate and scale each source, concatenate, then split to both encoders.
+  // setsar=1 because concat refuses inputs whose sample aspect ratios differ,
+  // and the BMPCC files declare 96:96 rather than 1:1.
+  const per = clip.sources
+    .map(
+      (_, i) =>
+        `[${i}:v]framestep=${clip.framestep},scale=1280:-2,setsar=1[v${i}]`,
+    )
+    .join(";");
+  const labels = clip.sources.map((_, i) => `[v${i}]`).join("");
+  const chain =
+    `${per};${labels}concat=n=${clip.sources.length}:v=1:a=0,` +
+    `setpts=N/24/TB,split=2[a][b]`;
+
+  // One decode pass over every source, feeding both encoders.
   // -threads 4 deliberately: six physical cores, shared with a human.
   await run([
     "-v",
@@ -125,8 +161,7 @@ async function encode(clip: Clip): Promise<void> {
     "-stats",
     "-threads",
     "4",
-    "-i",
-    clip.source,
+    ...clip.sources.flatMap((s) => ["-i", s]),
     "-filter_complex",
     chain,
     "-map",

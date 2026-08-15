@@ -1,4 +1,15 @@
+<!--
+  The hypar roof in plan: a square whose four edges all curve inward, leaving
+  points at the corners. That is the actual cut pattern (see the SolidWorks
+  roof plan), and it survives being shrunk to 16px, which a wireframe saddle
+  would not.
+
+  This is the light-scheme variant — shown when the browser chrome is light.
+-->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#2563eb"/>
-  <text x="16" y="23" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">S</text>
+  <rect width="32" height="32" rx="7" fill="#221f1a" />
+  <path
+    d="M6 5.5 Q16 11.5 26 5.5 Q20 16 26 26.5 Q16 20.5 6 26.5 Q12 16 6 5.5 Z"
+    fill="#e2803f"
+  />
 </svg>

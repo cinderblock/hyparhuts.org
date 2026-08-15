@@ -211,6 +211,34 @@ test.describe("Home", () => {
   });
 });
 
+test.describe("crawlability", () => {
+  test("serves robots.txt pointing at the sitemap", async ({ request }) => {
+    const res = await request.get("/robots.txt");
+    expect(res.status()).toBe(200);
+    const body = await res.text();
+    expect(body).toContain("Sitemap: https://hyparhuts.org/sitemap.xml");
+    expect(body).not.toMatch(/^Disallow: \/$/m);
+  });
+
+  test("serves a sitemap listing the real routes", async ({ request }) => {
+    const res = await request.get("/sitemap.xml");
+    expect(res.status()).toBe(200);
+    const body = await res.text();
+    expect(body).toContain("<loc>https://hyparhuts.org/</loc>");
+    // Generated from prerendered output, so it cannot drift — but 404 is
+    // deliberately excluded and should never creep back in.
+    expect(body).not.toContain("/404");
+  });
+
+  test("serves both favicons", async ({ request }) => {
+    for (const name of ["favicon-light.svg", "favicon-dark.svg"]) {
+      const res = await request.get(`/${name}`);
+      expect(res.status(), `${name} should be served`).toBe(200);
+      expect(await res.text()).toContain("<svg");
+    }
+  });
+});
+
 test.describe("404", () => {
   test("is prerendered as a real static document", async ({ page }) => {
     // The deployed host serves this file directly on a miss, so it has to
