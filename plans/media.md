@@ -28,17 +28,24 @@ Rejected, with reasons:
 | Cloudflare Stream      | ~$0.15–3/mo. Real ABR, but overkill for short silent clips. Revisit if a long piece appears.            |
 | Self-host on steamboat | Equally free and you already run Caddy there, but adds an uptime dependency for static files.           |
 
-### Archive — separate question, still open
+### Archive — resolved
 
 `P:`, `S:`, `T:` and `W:` are all SMB shares on **one server**, `uberfall.tsl`,
-same pool — identical used/free on all four. So the copies of `d10b`, `d11a`
-and `d11b` that exist "in both P: and S:" are **not redundancy**.
+same pool — identical used/free on all four. The copies of `d10b`, `d11a` and
+`d11b` that exist "in both P: and S:" are the same bytes on the same disks,
+not redundancy.
 
-Unique originals total **100.9 GB**. A separate archive bucket would cost about
-**$1.40/month** ($17/year). `servers/uberfall/docker-compose.yml` runs only
-Caddy and there is no restic/borg/sanoid/rclone anywhere in ops, so ops does
-not know about any backup — though the storage layer may be managed on the
-host outside the repo. Worth confirming before assuming the footage is safe.
+That pool is **two drives in RAID 0**. Striping is negative redundancy: either
+drive failing loses the whole array, so the odds of total loss are roughly
+double a single disk's.
+
+**Cameron is setting up offsite backups (as of 2026-08-14), which covers this.**
+No separate archive bucket. If the seed is prioritisable, the hut originals are
+worth going early — 100.9 GB against ~17.1 TB used, about 0.6% of the array,
+so hours rather than the weeks a full seed takes. They are also the only files
+here that cannot be recreated.
+
+Do not re-propose paid archive storage for these; it is handled.
 
 ### 2014 build timelapse — the main asset
 
